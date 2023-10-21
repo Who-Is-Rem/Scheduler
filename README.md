@@ -13,6 +13,9 @@ Before making this repository, I already had 3 failed iterations of the schedule
 have faced so far include but are not limited to extensive widget ancestry, bad template for widgets, 
 threads overlapping in functionality, pickle files getting deleted, and a never-ending while loop. 
 
+I should utilize branches once I actually start building the final gui from its components or as I 
+make adjustments to the gui.
+
 Some goals I should cover as I make the scheduler: have a template for widget placement, decrease widget 
 count from creating a spreadsheet, partition core components of the scheduler and test them separately, 
 smooth dnd of draggable widgets, connection to Google Drive and uploading and loading of files, saving 
