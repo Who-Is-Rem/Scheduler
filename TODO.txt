@@ -1,0 +1,19 @@
+A file that contains a list of things that I have to do in no particular order--for now.
+
+1. Establish connection to google drive.
+2. Create a side pop up frame class that can be independently tested.
+3. Create classes for people: Employees and Workers
+4. Create a class for services and connect them to employees and workers 
+5. Create the main spreadsheet in a widget efficient way, perhaps with separators
+6. Create a FIFO queue to manage updates from uploading files to google drive
+7. Create a calendar with tk.Calendar and add a bit of color, got to use the package for mac--forgot name of the package
+8. Implement and test the creation of files in google drive.
+9. Create draggable files with the children widgets not affecting dragging capability
+10. Create a pop up frame upon right clicking a customer frame to delete or edit the frame
+11. Create a pop up frame upon left clicking to provide a more detailed view of the customer's needs
+12. Implement connection between buttons and pop up frames
+13. Implement a date display 
+14. Implement changing the date 
+15. Implemnt uploading data to a pickle file 
+16. Implement the deletion of customer rows and addition of customer rows
+17. Implement proper scrolling, perhaps side-to-side as well.
