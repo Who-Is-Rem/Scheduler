@@ -2,9 +2,13 @@ from tkinter import *
 from tkinter import ttk
 
 """
-A class that creates a spread sheet frame, should be equally sized grids 
-in both direction and fill the entire parent frame, which would be the 
-root window when testing.
+The basic grid that will be used by a subclass SpreadSheet
+
+The rf is the row factor which is the number of cell division there should be 
+in each cell, this is to allow more dynamic placement of widgets later on in 
+the cells. If the row factor is one then the cell would just be one whole cell.
+If the row factor is 2 then the cell would be divided into two halves, etc.
+Same idea with cf--the column factor.
 """
 class Grid(ttk.Frame):
     """
@@ -17,18 +21,15 @@ class Grid(ttk.Frame):
 
     n,m >= 1
     """
-    def __init__(self, parent, cols=1, rows=1):
+    def __init__(self, parent, cols=1, rows=1, rf=1, cf=1):
         assert cols >= 1 and rows >= 1
-
-        # ===== Initialize basic atributes =====
         self.cols = IntVar(value=cols)
         self.rows = IntVar(value=rows)
-        self.colSpan = (cols*2)+1
-        self.rowSpan = (rows*2)+1
-
+        self.row_factor = rf+1
+        self.column_factor = cf+1
+        ttk.Frame.__init__(self, parent)  
 
         # ===== Initialize basic grid configs =====
-        ttk.Frame.__init__(self, parent)   
         self.grid_columnconfigure(list(range(1,self.getColSpan(), 2)), uniform="cols",weight=1)
         self.grid_rowconfigure(list(range(1, self.getRowSpan(), 2)), uniform="rows",weight=1)
 
@@ -38,43 +39,57 @@ class Grid(ttk.Frame):
         for i in range(rows+1):
             self.makeRowSep(i)
 
+    def getColSpan(self):
+        return (self.getColumnFactor()*self.cols.get())+1
+    
+    def getRowSpan(self):
+        return (self.getRowFactor()*self.rows.get())+1
+    
+    def getRowFactor(self):
+        return self.row_factor
+    
+    def getColumnFactor(self):
+        return self.column_factor
+
     """
     Has a custom event to detect when the number of rows are changed
     """
     def makeColSep(self, c):
         sep = ttk.Separator(self, orient="vertical")
-        sep.grid(row=0, column=(c*2), rowspan=self.getRowSpan(), sticky="nsew")
-        self.bind("<<RowChange>>", lambda e, sep=sep: sep.grid(row=0, column=(c*2), rowspan=self.getRowSpan(), sticky="nsew"), add="+")
+        sep.grid(row=0, column=(c*self.getColumnFactor()), rowspan=self.getRowSpan(), sticky="nsew")
+        self.bind("<<RowChange>>", lambda e, sep=sep: sep.grid(row=0, column=(c*self.getColumnFactor()), rowspan=self.getRowSpan(), sticky="nsew"), add="+")
 
     """
     Has a custom event to detect when the number of columns are changed
     """
     def makeRowSep(self, r):
         sep = ttk.Separator(self, orient="horizontal")
-        sep.grid(row=(r*2), column=0, columnspan=self.getColSpan(), sticky="nsew")
-        self.bind("<<ColumnChange>>", lambda e, sep=sep: sep.grid(row=(r*2), column=0, columnspan=self.getColSpan(), sticky="nsew"), add="+")
-
-    def getColSpan(self):
-        return (self.cols.get()*2)+1
-    
-    def getRowSpan(self):
-        return (self.rows.get()*2)+1
-
+        sep.grid(row=(r*self.getRowFactor()), column=0, columnspan=self.getColSpan(), sticky="nsew")
+        self.bind("<<ColumnChange>>", lambda e, sep=sep: sep.grid(row=(r*self.getRowFactor()), column=0, columnspan=self.getColSpan(), sticky="nsew"), add="+")
+        
 """
-A subclass of Grid that can accept a command to add or remove a row/column
+A subclass of GridData that can accept a command to add or remove a row/column
 """
 class SpreadSheet(Grid):
-    def __init__(self, parent, cols, rows):
-        super().__init__(parent, cols, rows)
+    def __init__(self, parent, cols, rows, rf=3):       # setting default row factor to 3 as that is the number of divisions I have in mind for this scheduler
+        super().__init__(parent, cols, rows, rf)
+
+        # Grid configure such that every fourth row and column has weight of zero
+        self.grid_columnconfigure(list(range(self.getColSpan())), uniform="cols",weight=1)
+        self.grid_columnconfigure(list(range(0,self.getColSpan(), self.getColumnFactor())),weight=0)
+        self.grid_rowconfigure(list(range(self.getRowSpan())), uniform="rows",weight=1)
+        self.grid_rowconfigure(list(range(0,self.getRowSpan(), self.getRowFactor())),weight=0)
 
         # ===== Trace Functionality =====
         self.cols.trace("w", lambda *args: [
-            self.grid_columnconfigure(list(range(1,self.getColSpan(), 2)), uniform="cols",weight=1),
+            self.grid_columnconfigure(list(range(self.getColSpan())), uniform="cols",weight=1),
+            self.grid_columnconfigure(list(range(0,self.getColSpan(), self.getColumnFactor())),weight=0),
             self.makeColSep(self.cols.get()),
             self.event_generate("<<ColumnChange>>")
             ])
         self.rows.trace("w", lambda *args: [
-            self.grid_rowconfigure(list(range(1,self.getRowSpan(), 2)), uniform="rows",weight=1),
+            self.grid_rowconfigure(list(range(self.getRowSpan())), uniform="rows",weight=1),
+            self.grid_rowconfigure(list(range(0,self.getRowSpan(), self.getRowFactor())),weight=0),
             self.makeRowSep(self.rows.get()),
             self.event_generate("<<RowChange>>")
             ])

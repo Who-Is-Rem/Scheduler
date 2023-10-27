@@ -11,6 +11,10 @@ class CustomTime():
         self.hour = hr
         self.min = min
 
+    def __eq__(self, other):
+        assert isinstance(other, CustomTime)
+        return (self.getHour()==other.getHour()) and (self.getMin()==other.getMin())
+
     def getHour(self):
         return self.hour
     
@@ -40,6 +44,9 @@ class SheetTime(CustomTime):
     def __init__(self, hr, min):
         super().__init__(hr, min)
 
+    def __eq__(self, other):
+        return super().__eq__(other)
+
     def addTime(self, dhours=0, dmins=0):
         assert dmins%15==0
         return super().addTime(dhours, dmins)
@@ -47,6 +54,9 @@ class SheetTime(CustomTime):
 class ServiceTime(CustomTime):
     def __init__(self, hr, min):
         super().__init__(hr, min)
+
+    def __eq__(self, other):
+        return super().__eq__(other)
 
     def addTime(self, dhours=0, dmins=0):
         assert dmins%5==0
@@ -106,6 +116,10 @@ class ServiceTimeRange():
         mdiff = self.max.getMin()-self.estimate.getMin()
         assert hdiff>0 or (hdiff==0 and mdiff>=0)
         self.difference = ServiceTime(hdiff, mdiff)
+
+    def __eq__(self, other):
+        assert isinstance(other , ServiceTimeRange)
+        return (self.getMax()==other.getMax()) and (self.getEstimate()==other.getEstimate()) 
 
     def getEstimate(self):
         return self.estimate
