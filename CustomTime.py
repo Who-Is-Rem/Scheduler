@@ -82,13 +82,13 @@ Sting should be in the format of --h--m
 
 e.g. 0h10m -> (0, 10)
 """
-def StringToTime(string):
+def StringToServiceTime(string):
     assert isinstance(string, str)
     assert len(string)>=4
     hindex = string.find("h")
     mindex = string.find("m")
     assert hindex != -1 and mindex != -1 and mindex == (len(string)-1)
-    return (int(string[0:hindex]), int(string[hindex+1:mindex]))
+    return ServiceTime(int(string[0:hindex]), int(string[hindex+1:mindex]))
 
 """
 Class for displaying the range of time a service may take. THe maximum time 
@@ -99,12 +99,13 @@ e.g. A Manicure may take 30-35 minutes
 class ServiceTimeRange():
     def __init__(self, estimate="0h0m", max="0h0m"):
         assert isinstance(estimate, str) and isinstance(max, str)
-        etup = StringToTime(estimate)
-        mtup = StringToTime(max)
-        assert mtup[0]>etup[0] or (mtup[0]==etup[0] and mtup[1]>=etup[1])
-        self.estimate = ServiceTime(etup[0], etup[1])
-        self.max = ServiceTime(mtup[0], mtup[1])
-        self.difference = ServiceTime(mtup[0]-etup[0], mtup[1]-etup[1])
+        
+        self.max = StringToServiceTime(max)
+        self.estimate = StringToServiceTime(estimate)
+        hdiff = self.max.getHour()-self.estimate.getHour()
+        mdiff = self.max.getMin()-self.estimate.getMin()
+        assert hdiff>0 or (hdiff==0 and mdiff>=0)
+        self.difference = ServiceTime(hdiff, mdiff)
 
     def getEstimate(self):
         return self.estimate
