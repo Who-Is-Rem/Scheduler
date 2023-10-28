@@ -1,6 +1,8 @@
 from tkinter import *
 from tkinter import ttk
 
+# Test
+
 """
 The basic grid that will be used by a subclass SpreadSheet
 
@@ -105,4 +107,16 @@ class SpreadSheet(Grid):
     """
     def add_row(self):
         self.rows.set(self.rows.get()+1)
+        
+"""
+Now this will be the actual SpreadSheet that will be used in my scheduler
+Will be abusing the fact that I can use grid row 0 to put in employee labels
+and grid column 0 to put labels for time
+
+The employee labels should not interact with column 0
+The time labels should not interact with row 0
+"""
+class ScheduleSheet(SpreadSheet):
+    def __init__(self, parent, cols, rows, rf=3):
+        super().__init__(parent, cols, rows, rf)
         
