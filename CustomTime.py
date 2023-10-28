@@ -44,7 +44,7 @@ class CustomTime():
 A Time class that will be used for displaying the time for the spreadsheet
 """
 class SheetTime(CustomTime):
-    def __init__(self, hr, min):
+    def __init__(self, hr=0, min=0):
         assert min%15 == 0
         super().__init__(hr, min)
 
@@ -56,7 +56,7 @@ class SheetTime(CustomTime):
         return super().addTime(dhours, dmins)
     
 class ServiceTime(CustomTime):
-    def __init__(self, hr, min):
+    def __init__(self, hr=0, min=0):
         assert min%5==0
         super().__init__(hr, min)
 
