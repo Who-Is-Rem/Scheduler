@@ -20,6 +20,9 @@ class CustomTime():
     
     def getMin(self):
         return self.min
+    
+    def getTotalMinutes(self):
+        return (self.getHour()*60)+self.getMin()
 
     """
     Adds some amopunt of time to the current time and returns a new CustomTime Object
@@ -42,6 +45,7 @@ A Time class that will be used for displaying the time for the spreadsheet
 """
 class SheetTime(CustomTime):
     def __init__(self, hr, min):
+        assert min%15 == 0
         super().__init__(hr, min)
 
     def __eq__(self, other):
@@ -53,6 +57,7 @@ class SheetTime(CustomTime):
     
 class ServiceTime(CustomTime):
     def __init__(self, hr, min):
+        assert min%5==0
         super().__init__(hr, min)
 
     def __eq__(self, other):
