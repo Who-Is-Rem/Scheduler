@@ -21,7 +21,7 @@ class Grid(ttk.Frame):
 
     n,m >= 1
     """
-    def __init__(self, parent, cols=1, rows=1, rf=1, cf=1):
+    def __init__(self, parent, cols=0, rows=0, rf=1, cf=1):
         assert cols >= 1 and rows >= 1
         self.cols = IntVar(value=cols)
         self.rows = IntVar(value=rows)
@@ -71,7 +71,7 @@ class Grid(ttk.Frame):
 A subclass of GridData that can accept a command to add or remove a row/column
 """
 class SpreadSheet(Grid):
-    def __init__(self, parent, cols, rows, rf=3):       # setting default row factor to 3 as that is the number of divisions I have in mind for this scheduler
+    def __init__(self, parent, cols=0, rows=0, rf=1):       # setting default row factor to 3 as that is the number of divisions I have in mind for this scheduler
         super().__init__(parent, cols, rows, rf)
 
         # Grid configure such that every fourth row and column has weight of zero
@@ -105,4 +105,4 @@ class SpreadSheet(Grid):
     """
     def add_row(self):
         self.rows.set(self.rows.get()+1)
-        
+
