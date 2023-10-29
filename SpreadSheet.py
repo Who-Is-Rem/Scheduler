@@ -76,9 +76,9 @@ class SpreadSheet(GridSetUp):
                                   weight=1, uniform="rows", minsize=self.minH)
             
         # ===== Create the grid =====
-        for i in range(cols+1):
+        for i in range(1, cols+1):
             self.makeColSep(i)
-        for i in range(1, rows+1):
+        for i in range(rows+1):
             self.makeRowSep(i)
 
         # ===== Trace Functionality =====
@@ -133,6 +133,8 @@ class SchedulerSheetCanvas(Frame):
         self.canvas.grid(row=0, column=0, sticky="nsew")
 
         self.employee_frame = ttk.Frame(self, height=40)
+        self.employee_frame.grid_propagate(False)
+        self.employee_frame.grid_rowconfigure(0, weight=1)
         self.employee_id = self.canvas.create_window((0,0), window=self.employee_frame, anchor=NW)
 
         self.spread_sheet = SpreadSheet(self.canvas, cols=0, rows=48, rf=3)
@@ -140,11 +142,29 @@ class SchedulerSheetCanvas(Frame):
         self.canvas.configure(scrollregion=(0, 0)+self.canvas.bbox("scroll")[2:])
         self.spread_sheet.bind("<<SizeChange>>", lambda e: [self.canvas.configure(scrollregion=(0, 0)+self.canvas.bbox("scroll")[2:],
                                                                                   height=self.spread_sheet.winfo_height(),
-                                                                                  width=self.spread_sheet.winfo_width())], add="+")
+                                                                                  width=self.spread_sheet.winfo_width()),
+                                                            self.employee_frame.configure(width=self.spread_sheet.winfo_width(),
+                                                                                          height=40)], add="+")
         self.canvas.bind_all("<MouseWheel>", lambda e: self.canvas.yview_scroll(-1*(e.delta), "units") if e.state==0 else self.canvas.xview_scroll(-1*(e.delta), "units")) 
-
+        
     def addEmployee(self, employee):
         # assert isinstance(employee, Employee)     # Haven't fully implemented employees so will comment out
         # TODO: process employee data and assign appropriate name
-        empLabel = LabelFrame(self, text=employee)
+        empNum = len(self.employee_frame.winfo_children())
+
+        empLabel = ttk.Label(self.employee_frame, text=str(empNum), anchor=CENTER, font=("Helvetica", 26))
+        empLabel.grid_columnconfigure(0, weight=1)
+        empLabel.grid_rowconfigure(0, weight=1)
+        delete_label = ttk.Label(empLabel, text="X")
+
+        empLabel.bind("<Enter>", lambda e, d=delete_label: d.grid(row=0, column=0, sticky="nse", padx=(0, 5)))
+        empLabel.bind("<Leave>", lambda e, d=delete_label: d.grid_forget())
+        delete_label.bind("<Button-1>", lambda e: [empLabel.destroy(), self.event_generate("<<DeleteColumn>>")])
+
+        self.employee_frame.columnconfigure(empNum, weight=1, uniform="emp")
+
+        empLabel.grid(row=0, column=empNum, sticky="nsew")
+        self.spread_sheet.add_column()
+
+
 
