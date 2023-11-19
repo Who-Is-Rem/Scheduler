@@ -6,7 +6,7 @@ A file that contains a list of things that I have to do in no particular order--
 4. Create a class for services and connect them to employees and workers 
 5. Create the main spreadsheet in a widget efficient way, perhaps with separators
 6. Create a FIFO queue to manage updates from uploading files to google drive
-7. Create a calendar with tk.Calendar and add a bit of color, got to use the package for mac--forgot name of the package
+7. Create a calendar with tk.Calendar and add a bit of color, got to use the package for mac--ttk.Style
 8. Implement and test the creation of files in google drive.
 9. Create draggable files with the children widgets not affecting dragging capability
 10. Create a pop up frame upon right clicking a customer frame to delete or edit the frame
