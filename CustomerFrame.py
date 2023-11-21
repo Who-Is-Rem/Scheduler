@@ -37,10 +37,12 @@ This is to facilitate changing parent frame of the dragged widget
 
 Once the widget is gridded, the size of the widget should change to match 
 the size of the grid
+
+For the scheculer the parent will ALWAYS be parent.parent else parent.winfo_toplevel()
 """
 class DnDGrid(DnD):
     def __init__(self, parent):
-        super().__init__(parent.winfo_toplevel())
+        super().__init__(parent.parent)
         self.parent = parent
         self.bind("<Map>", lambda e: self.configure(width=self.winfo_width(), height=self.winfo_height()))
 
@@ -50,10 +52,21 @@ class DnDGrid(DnD):
 
     def drop(self, event):
         widget = event.widget
-        x, y = self.parent.grid_location(widget.winfo_x()+widget.winfo_width()//2,widget.winfo_y()-35)
+        tmpx = widget.winfo_x()+(widget.winfo_width()//2)+(self.parent.parent.xview()[0]*self.parent.winfo_width())
+        tmpy = widget.winfo_y()+5+(self.parent.parent.yview()[0]*self.parent.winfo_height())
+        x, y = self.parent.grid_location(tmpx, tmpy)
+
         xmax, ymax = self.parent.grid_size()
+
+        x = x+1 if x%self.parent.column_factor == 0 else x
+        x = x-2 if x>=xmax == 0 else x
+
+        y = y+1 if y%self.parent.row_factor == 0 else y
+        y = y-2 if y>=ymax == 0 else y
+
         if x>=0 and y>=0 and x<xmax-1 and y<ymax-1:
             self.grid(in_=self.parent,row=y, column=x, sticky="nsew")
+            self.event_generate("<<CustomerGrided>>")
 
 """
 Should have a customer and alist of services as inputs

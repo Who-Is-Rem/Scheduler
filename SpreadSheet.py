@@ -2,6 +2,8 @@ from tkinter import *
 from tkinter import ttk
 from CustomTime import *
 from People import *
+from TimeMatrix import *
+from CustomerFrame import *
 
 """
 The basic grid setup that will be used by a subclass SpreadSheet
@@ -25,18 +27,18 @@ class GridSetUp(ttk.Frame):
     def __init__(self, parent, cols=0, rows=1, rf=1, cf=1):
         assert cols >= 0 and rows >= 0
         self.parent = parent
-        self.cols = IntVar(value=cols)
-        self.rows = IntVar(value=rows)
+        self.cols = cols
+        self.rows = rows
         self.row_factor = rf+1
         self.column_factor = cf+1
         ttk.Frame.__init__(self, parent)  
         self.grid_propagate(False)
 
     def getColSpan(self):
-        return (self.getColumnFactor()*self.cols.get())+1
+        return (self.getColumnFactor()*self.cols)+1
     
     def getRowSpan(self):
-        return (self.getRowFactor()*self.rows.get())+1
+        return (self.getRowFactor()*self.rows)+1
     
     def getRowFactor(self):
         return self.row_factor
@@ -59,15 +61,15 @@ class GridSetUp(ttk.Frame):
         sep = ttk.Separator(self, orient="horizontal")
         sep.grid(row=(r*self.getRowFactor()), column=0, columnspan=self.getColSpan(), sticky="sew")
         self.bind("<<ColumnChange>>", lambda e, sep=sep: sep.grid(row=(r*self.getRowFactor()), column=0, columnspan=self.getColSpan(), sticky="nsew"), add="+")
-        
+
 """
 A subclass of GridData that can accept a command to add or remove a row/column
 """
 class SpreadSheet(GridSetUp):
     def __init__(self, parent, cols=0, rows=1, rf=3):       # setting default row factor to 3 as that is the number of divisions I have in mind for this scheduler
         super().__init__(parent, cols, rows, rf)
-        self.minW = 200
-        self.minH = 10
+        self.minW = 100
+        self.minH = 9
         if cols>0:
             self.grid_columnconfigure(list(filter(lambda i: i%self.getColumnFactor()!=0, list(range(self.getColSpan())))), 
                                   weight=1, uniform="cols", minsize=self.minW)
@@ -76,95 +78,102 @@ class SpreadSheet(GridSetUp):
                                   weight=1, uniform="rows", minsize=self.minH)
             
         # ===== Create the grid =====
-        for i in range(1, cols+1):
+        for i in range(cols+1):
             self.makeColSep(i)
         for i in range(rows+1):
             self.makeRowSep(i)
 
-        # ===== Trace Functionality =====
-        self.cols.trace("w", lambda *args: [
-            self.grid_columnconfigure(list(filter(lambda i: i%self.getColumnFactor()!=0, list(range(self.getColSpan())))), 
-                                  weight=1, uniform="cols", minsize=self.minW),
-            self.makeColSep(self.cols.get()),
-            self.event_generate("<<ColumnChange>>"), self.event_generate("<<SizeChange>>")
-            ])
-        self.rows.trace("w", lambda *args: [
-            self.grid_rowconfigure(list(filter(lambda i: i%self.getRowFactor()!=0, list(range(self.getRowSpan())))), 
-                                  weight=1, uniform="rows", minsize=self.minH),
-            self.makeRowSep(self.rows.get()),
-            self.event_generate("<<RowChange>>"), self.event_generate("<<SizeChange>>"),
-            ])
-        
         self.bind("<<SizeChange>>", lambda e: self.configure(
-            width=self.parent.winfo_width() if self.minW*self.cols.get()*(self.getColumnFactor()-1)<self.parent.winfo_width() else self.minW*self.cols.get()*(self.getColumnFactor()-1), 
-            height=self.parent.winfo_height() if self.minH*self.rows.get()*(self.getRowFactor()-1)<self.parent.winfo_height() else self.minH*self.rows.get()*(self.getRowFactor()-1)))
+            width=self.parent.winfo_width() if self.minW*self.cols*self.getColumnFactor()<self.parent.winfo_width() else self.minW*self.cols*self.getColumnFactor(), 
+            height=self.parent.winfo_height() if self.minH*self.rows*self.getRowFactor()<self.parent.winfo_height() else self.minH*self.rows*self.getRowFactor()))
 
     """
-    Simply add 1 to self.cols and let a IntVar.trace handle expansion
+    Helper function that should be called upon to create new columns
+
+    Does not include initialized columns
     """
     def add_column(self):
-        self.cols.set(self.cols.get()+1)
+        self.cols += 1
+        self.grid_columnconfigure(list(filter(lambda i: i%self.getColumnFactor()!=0, list(range(self.getColSpan())))), 
+                                weight=1, uniform="cols", minsize=self.minW)
+        self.makeColSep(self.cols)
+        self.event_generate("<<ColumnChange>>") 
+        self.event_generate("<<SizeChange>>")
 
     """
-    Simply add 1 to self.rows and let a IntVar.trace handle expansion
+    Helper function that should be called upon to create new rows
+
+    Does not include initialized rows
     """
     def add_row(self):
-        self.rows.set(self.rows.get()+1)
-        
-"""
-The SchedulerSheet class is the spread sheet that will be used in the scheduler. Should have a 
-Dictionary of column numbers and the widgets contained in each column; these columns are the
-columns of the spreadsheet not the grid columns
+        self.rows += 1
+        self.grid_rowconfigure(list(filter(lambda i: i%self.getRowFactor()!=0, list(range(self.getRowSpan())))), 
+                                weight=1, uniform="rows", minsize=self.minH)
+        self.makeRowSep(self.rows)
+        self.event_generate("<<SizeChange>>")
+        self.event_generate("<<RowChange>>")
 
-The Scheduler time will range from 8am to 8pm with is from 08:00 to 20:00 for a total of 12hrs
-or 720 minutes. Each segment should be 15 minutes so there will be 720//15 rows i.e. 48
-
-May have to implement a "margin" of sorts at the bottom of the spreadsheet to show 20:00
-Initially will not utilize employees.pickle but will later. Currently, no employees exist
-
-The Employee names SHOULD NOT use columns 0
-"""
-class SchedulerSheetCanvas(Frame):
+class ScrollableSpreadSheet(Frame):
     def __init__(self, parent):
+        self.time_matrix = SpreadSheetMatrix(CustomTime(12), 5)
+
         Frame.__init__(self, parent)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(0, weight=1)
-        self.canvas = Canvas(self, highlightthickness=0, bg = "yellow")
-        self.canvas.grid(row=0, column=0, sticky="nsew")
+        self.grid_columnconfigure(2, weight=1)
+        self.grid_rowconfigure(1, weight=1)
 
-        self.employee_frame = ttk.Frame(self, height=40)
-        self.employee_frame.grid_propagate(False)
-        self.employee_frame.grid_rowconfigure(0, weight=1)
-        self.employee_id = self.canvas.create_window((0,0), window=self.employee_frame, anchor=NW)
+        self.ss_canvas = Canvas(self, highlightthickness=0, bg = "white")
+        self.ss_canvas.grid(row=1, column=2, sticky="nsew")
 
-        self.spread_sheet = SpreadSheet(self.canvas, cols=0, rows=48, rf=3)
-        self.ssframe_id = self.canvas.create_window((0,40),window=self.spread_sheet, anchor=NW, tags="scroll")
-        self.canvas.configure(scrollregion=(0, 0)+self.canvas.bbox("scroll")[2:])
-        self.spread_sheet.bind("<<SizeChange>>", lambda e: [self.canvas.configure(scrollregion=(0, 0)+self.canvas.bbox("scroll")[2:],
-                                                                                  height=self.spread_sheet.winfo_height(),
-                                                                                  width=self.spread_sheet.winfo_width()),
-                                                            self.employee_frame.configure(width=self.spread_sheet.winfo_width(),
-                                                                                          height=40)], add="+")
-        self.canvas.bind_all("<MouseWheel>", lambda e: self.canvas.yview_scroll(-1*(e.delta), "units") if e.state==0 else self.canvas.xview_scroll(-1*(e.delta), "units")) 
-        
-    def addEmployee(self, employee):
-        # assert isinstance(employee, Employee)     # Haven't fully implemented employees so will comment out
-        # TODO: process employee data and assign appropriate name
-        empNum = len(self.employee_frame.winfo_children())
+        self.spread_sheet = SpreadSheet(self.ss_canvas, cols=0, rows=48, rf=3)
+        self.ssframe_id = self.ss_canvas.create_window((0,0),window=self.spread_sheet, anchor=NW)
 
-        empLabel = ttk.Label(self.employee_frame, text=str(empNum), anchor=CENTER, font=("Helvetica", 26))
-        empLabel.grid_columnconfigure(0, weight=1)
-        empLabel.grid_rowconfigure(0, weight=1)
-        delete_label = ttk.Label(empLabel, text="X")
+        self.ss_canvas.configure(scrollregion=self.ss_canvas.bbox("all"))
 
-        empLabel.bind("<Enter>", lambda e, d=delete_label: d.grid(row=0, column=0, sticky="nse", padx=(0, 5)))
-        empLabel.bind("<Leave>", lambda e, d=delete_label: d.grid_forget())
-        delete_label.bind("<Button-1>", lambda e: [empLabel.destroy(), self.event_generate("<<DeleteColumn>>")])
+        self.spread_sheet.bind("<<SizeChange>>", lambda e: [self.ss_canvas.configure(scrollregion=self.ss_canvas.bbox("all"))], 
+                                                                                  add="+")
+        self.bind_all("<MouseWheel>", lambda e: self.ss_canvas.yview_scroll(-1*(e.delta), "units")
+                                                if e.state==0 
+                                                else self.ss_canvas.xview_scroll(-1*(e.delta), "units")) 
 
-        self.employee_frame.columnconfigure(empNum, weight=1, uniform="emp")
+class SchedulerSheet(ScrollableSpreadSheet):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.emp_canvas = Canvas(self, highlightthickness=0, bg = "yellow", height=40)
+        self.emp_canvas.grid(row=0, column=2, sticky="nsew")
 
-        empLabel.grid(row=0, column=empNum, sticky="nsew")
+        self.employees_frame = ttk.Frame(self.emp_canvas, style="Employee.TFrame")
+        self.employees_frame.grid_propagate(False)
+        self.empframe_id = self.emp_canvas.create_window((0,0), window=self.employees_frame, anchor=NW)
+        self.emp_canvas.configure(scrollregion=self.emp_canvas.bbox("all"))
+
+        self.spread_sheet.bind("<<SizeChange>>", lambda e: 
+                               [self.employees_frame.configure(width=self.spread_sheet.winfo_width(), height=40),
+                                self.emp_canvas.configure(
+                                   scrollregion=self.emp_canvas.bbox("all"),
+                                   height=40,
+                                   width=self.spread_sheet.winfo_width())],
+                                add="+")
+        self.bind_all("<MouseWheel>", lambda e: self.emp_canvas.xview_scroll(-1*(e.delta), "units") if e.state == 1 else NONE, add="+")
+
+    def addEmployee(self, employee=NONE):
+        #TODO: implement proper addition of a employee Label
         self.spread_sheet.add_column()
+        current_length = len(self.employees_frame.winfo_children())
+        self.employees_frame.grid_columnconfigure(current_length, weight=1, uniform="emp")
+        
+        # ===== TEMPORARY FOR TESTING =====
 
+        ename = ttk.Label(self.employees_frame,text=f"{len(self.employees_frame.winfo_children())}", 
+                          name=f"{current_length}",
+                          anchor=CENTER,
+                          style="Employee.TLabelframe.Label")
+        ename.grid(row=0, column=current_length, sticky="nsew")
 
+        # =================================
 
+    def addCustomer(self, customer=NONE):
+        #TODO: implement proper addition of a customer frame
+        customerFrame = DnDGrid(self.spread_sheet)
+        customerFrame.grid(row=0, column=0, sticky="e")
+        
+        
