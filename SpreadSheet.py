@@ -75,12 +75,12 @@ class SpreadSheet(GridSetUp):
                                   weight=1, uniform="cols", minsize=self.minW)
         if rows>0:
             self.grid_rowconfigure(list(filter(lambda i: i%self.getRowFactor()!=0, list(range(self.getRowSpan())))), 
-                                  weight=1, uniform="rows", minsize=self.minH)
+                                  weight=2, uniform="rows", minsize=self.minH)
             
         # ===== Create the grid =====
         for i in range(cols+1):
             self.makeColSep(i)
-        for i in range(rows+1):
+        for i in range(1, rows):        # Originally (rows+1), but was changed to fit aesthetics
             self.makeRowSep(i)
 
         self.bind("<<SizeChange>>", lambda e: self.configure(
@@ -108,7 +108,7 @@ class SpreadSheet(GridSetUp):
     def add_row(self):
         self.rows += 1
         self.grid_rowconfigure(list(filter(lambda i: i%self.getRowFactor()!=0, list(range(self.getRowSpan())))), 
-                                weight=1, uniform="rows", minsize=self.minH)
+                                weight=2, uniform="rows", minsize=self.minH)
         self.makeRowSep(self.rows)
         self.event_generate("<<SizeChange>>")
         self.event_generate("<<RowChange>>")
@@ -118,18 +118,22 @@ class ScrollableSpreadSheet(Frame):
         self.time_matrix = SpreadSheetMatrix(CustomTime(12), 5)
 
         Frame.__init__(self, parent)
-        self.grid_columnconfigure(2, weight=1)
+        self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
         self.ss_canvas = Canvas(self, highlightthickness=0, bg = "white")
-        self.ss_canvas.grid(row=1, column=2, sticky="nsew")
+        self.ss_canvas.grid(row=1, column=1, sticky="nsew")
 
         self.spread_sheet = SpreadSheet(self.ss_canvas, cols=0, rows=48, rf=3)
         self.ssframe_id = self.ss_canvas.create_window((0,0),window=self.spread_sheet, anchor=NW)
 
         self.ss_canvas.configure(scrollregion=self.ss_canvas.bbox("all"))
 
-        self.spread_sheet.bind("<<SizeChange>>", lambda e: [self.ss_canvas.configure(scrollregion=self.ss_canvas.bbox("all"))], 
+        self.ss_canvas.bind("<Configure>", lambda e: self.spread_sheet.event_generate("<<SizeChange>>"))
+        self.spread_sheet.bind("<<SizeChange>>", lambda e: [self.ss_canvas.configure(scrollregion=self.ss_canvas.bbox("all"),
+                                                                                     width=self.spread_sheet.winfo_width()),
+                                                            # self.spread_sheet.configure(width=self.ss_canvas.winfo_width())
+                                                            ], 
                                                                                   add="+")
         self.bind_all("<MouseWheel>", lambda e: self.ss_canvas.yview_scroll(-1*(e.delta), "units")
                                                 if e.state==0 
@@ -138,8 +142,21 @@ class ScrollableSpreadSheet(Frame):
 class SchedulerSheet(ScrollableSpreadSheet):
     def __init__(self, parent):
         super().__init__(parent)
+        tmpf = ttk.Frame(self)
+        tmpf.grid(column=0, row=0, rowspan=2, sticky="nsew")
+        tmpf.grid_columnconfigure(0, weight=1)
+        tmpf.grid_rowconfigure(0, weight=1)
+
+        self.queue = ttk.Frame(tmpf, style="queue.TFrame", name="queue")
+        self.queue.grid(column=0, row=0, sticky="nsew")
+        Frame(self.queue).pack(side=BOTTOM)
+
+        self.spread_sheet.grid_rowconfigure([0, 192], weight=1)
+        Label(self.spread_sheet,text="", font=("Helvetica", 5)).grid(column=1, row=0, sticky="nsew", columnspan=999)
+        Label(self.spread_sheet,text="", font=("Helvetica", 5)).grid(column=1, row=192, sticky="nsew", columnspan=999)
+
         self.emp_canvas = Canvas(self, highlightthickness=0, bg = "yellow", height=40)
-        self.emp_canvas.grid(row=0, column=2, sticky="nsew")
+        self.emp_canvas.grid(row=0, column=1, sticky="nsew")
 
         self.employees_frame = ttk.Frame(self.emp_canvas, style="Employee.TFrame")
         self.employees_frame.grid_propagate(False)
@@ -173,7 +190,8 @@ class SchedulerSheet(ScrollableSpreadSheet):
 
     def addCustomer(self, customer=NONE):
         #TODO: implement proper addition of a customer frame
-        customerFrame = DnDGrid(self.spread_sheet)
-        customerFrame.grid(row=0, column=0, sticky="e")
-        
+        customerFrame = DnDGrid(self,self.spread_sheet)
+        self.spread_sheet.configure(width=self.spread_sheet.winfo_width()-self.queue.winfo_width())
+        self.employees_frame.configure(width=self.spread_sheet.winfo_width())
+        customerFrame.pack(in_=self.queue)
         

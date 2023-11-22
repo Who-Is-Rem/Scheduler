@@ -41,10 +41,13 @@ the size of the grid
 For the scheculer the parent will ALWAYS be parent.parent else parent.winfo_toplevel()
 """
 class DnDGrid(DnD):
-    def __init__(self, parent):
-        super().__init__(parent.parent)
+    def __init__(self, tmpparent, parent):
+        self.grid_coords = (-1, -1)
+
+        super().__init__(tmpparent)
         self.parent = parent
-        self.bind("<Map>", lambda e: self.configure(width=self.winfo_width(), height=self.winfo_height()))
+        self.bind("<Map>", lambda e: self.configure(width=self.winfo_width(), height=self.winfo_height())
+                  if self.grid_info() else None)
 
     def bind_drag(self):
         super().bind_drag()
@@ -53,7 +56,7 @@ class DnDGrid(DnD):
     def drop(self, event):
         widget = event.widget
         tmpx = widget.winfo_x()+(widget.winfo_width()//2)+(self.parent.parent.xview()[0]*self.parent.winfo_width())
-        tmpy = widget.winfo_y()+5+(self.parent.parent.yview()[0]*self.parent.winfo_height())
+        tmpy = widget.winfo_y()+(self.parent.parent.yview()[0]*self.parent.winfo_height())-35
         x, y = self.parent.grid_location(tmpx, tmpy)
 
         xmax, ymax = self.parent.grid_size()
@@ -65,14 +68,16 @@ class DnDGrid(DnD):
         y = y-2 if y>=ymax == 0 else y
 
         if x>=0 and y>=0 and x<xmax-1 and y<ymax-1:
-            self.grid(in_=self.parent,row=y, column=x, sticky="nsew")
+            self.grid(in_=self.parent,row=y, column=x, sticky="nsew", padx=(0, 10))
+            self.grid_coords = (x, y)
             self.event_generate("<<CustomerGrided>>")
-
+        else:
+            self.grid(in_=self.parent,row=self.grid_coords[1], column=self.grid_coords[0], sticky="nsew", padx=(0, 10))
 """
 Should have a customer and alist of services as inputs
 """
 class CustomerFrameBasic(DnDGrid):
-    def __init__(self, parent, queue, customer, services):
+    def __init__(self, parent, customer, services):
         super().__init__(parent)
         self.configure()
         assert isinstance(customer, Customer)
