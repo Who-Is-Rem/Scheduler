@@ -32,7 +32,7 @@ class Person():
     
 """
 Class representing a person, should have a attribute representing the 
-list of services that customer can offer
+list of services that employee can offer
 """
 class Employee(Person):
     def __init__(self, first_name, last_name, phone_num):
@@ -57,11 +57,12 @@ class Employee(Person):
 
 
 """
-Class representing a person 
+Class representing a customer along with the services they want
 """
 class Customer(Person):
     def __init__(self, first_name, last_name, phone_num):
         super().__init__(first_name, last_name, phone_num)
+        self.services = []
 
     def __eq__(self, other):
         return super().__eq__(other)

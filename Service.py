@@ -40,7 +40,7 @@ class Service():
         if isinstance(args[0], list): 
             args = args[0]
             for service in args: assert isinstance(service, Service)
-        total_time = self.time_range.addAll(args)
-        total_price = 0
+        total_time = self.time_range.addAll(*list(map(lambda s: s.time_range, args)))
+        total_price = self.price
         for service in args: total_price += service.getPrice()
         return total_price, total_time
