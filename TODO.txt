@@ -16,3 +16,8 @@ Implement the deletion of customer rows and addition of customer rows
 Current Issues:
 - minor issue of being able to grid customers outside of "view"
 - the fking size of the customer frames is off slightly in height
+
+Note:
+Can use pyinstaller to compile an executable with multiple python and 
+nonpython files, look into it once finished with the general setup of 
+the scheduler
